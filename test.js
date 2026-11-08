@@ -81,10 +81,13 @@ for (const [src, t] of Object.entries(TAM)){
   assert(fs.existsSync(path.join(RAIZ, src)), src + ': existe');
   assert(igual(tamWebp(path.join(RAIZ, src)), t), src + `: tamaño declarado ${t} = real ${tamWebp(path.join(RAIZ, src))}`);
   assert(archivosSw.includes(src), src + ': sw.js la guarda para usarla sin conexión');
-  const esSesion = Object.values(SES).some(s => s.imagen === src);
-  if (!esSesion) assert(EJ[src.slice(0, -5)], src + ': corresponde a un ejercicio que existe');
+  const esSesion = Object.values(SES).some(s => s.imagen === src), esCarino = src === ev('FOTO_MONITOS') || ev('FOTOS_CARINO').includes(src);
+  if (!esSesion && !esCarino) assert(EJ[src.slice(0, -5)], src + ': corresponde a un ejercicio que existe');
 }
 for (const [sid, s] of Object.entries(SES)) assert(TAM[s.imagen], sid + ': su imagen está registrada');
+assert(TAM[ev('FOTO_MONITOS')] && ev('FOTOS_CARINO').every(f => TAM[f]), 'fotos de las ventanas registradas');
+assert(ev('FOTOS_CARINO').length === 27 && new Set(ev('FOTOS_CARINO')).size === 27, '27 fotos de media hora, sin repetir');
+for (const f of ev('FOTOS_CARINO')){ const b = fs.readFileSync(path.join(RAIZ, f)); assert(!b.includes('Exif') && !b.includes('GPS'), f + ': sin metadatos EXIF/GPS'); }
 assert(w.htmlImg && w.imagenEjercicio('prensa') === 'prensa.webp' && w.imagenEjercicio('eliptica') === null && w.imagenEjercicio('pierna') === null, 'imagen de ejercicio solo si existe (y nunca la de una sesión)');
 const enDisco = fs.readdirSync(RAIZ).filter(f => f.endsWith('.webp'));
 for (const f of enDisco) assert(TAM[f], f + ': imagen en la carpeta pero sin registrar en TAM_IMG');
@@ -334,14 +337,14 @@ assert(w.resumenPeso([], '2026-11-02') === null, 'sin registros → null');
   assert(sem('2026-11-02').dias === 3 && sem('2026-11-02').plan.every(p => p.dia <= 4), 'cambiar días replanifica sin S/D');
   // Próxima semana
   click('[data-a="sem"]', '1');
-  assert(/La semana que viene/.test(doc.body.textContent) && !doc.querySelector('.dia [data-a="empezar"]'), 'próxima semana: se ve el plan sin botón de empezar');
+  assert(/La semana que viene/.test(doc.getElementById('app').textContent) && !doc.querySelector('.dia [data-a="empezar"]'), 'próxima semana: se ve el plan sin botón de empezar');
   assert(sem('2026-11-09').dias === 3, 'la próxima hereda los 3 días');
   click('[data-a="dias"]', '1'); click('[data-a="dias"]', '1');
   assert(sem('2026-11-09').dias === 5 && sem('2026-11-02').dias === 3, 'cambiar la próxima no toca esta');
   // Pilates el miércoles de esta semana
   click('[data-a="sem"]', '0');
   click('[data-a="pilates-abrir"]'); click('[data-a="pilates-dia"]', '2026-11-04');
-  assert(est().clases.length === 1 && /Pilates/.test(doc.body.textContent), 'pilates añadido y visible');
+  assert(est().clases.length === 1 && /Pilates/.test(doc.getElementById('app').textContent), 'pilates añadido y visible');
   // Pasado: no se pueden marcar días anteriores a hoy (es lunes: ninguno deshabilitado)
   W.__ahora = '2026-11-04T09:00:00'; W.render(); // miércoles
   assert([...doc.querySelectorAll('.chip[data-a="disp"]')].filter(c => c.disabled).length === 2, 'miércoles: L y M deshabilitados');
@@ -353,7 +356,7 @@ assert(w.resumenPeso([], '2026-11-02') === null, 'sin registros → null');
   click('[data-a="tab"]', 'entrenos');
   const btn = doc.querySelector('.dia [data-a="empezar"]');
   const ses = btn.dataset.v; btn.click();
-  assert(!doc.querySelector('nav.tabs') && /Calentamiento/.test(doc.body.textContent), 'entreno: calentamiento a pantalla completa');
+  assert(!doc.querySelector('nav.tabs') && /Calentamiento/.test(doc.getElementById('app').textContent), 'entreno: calentamiento a pantalla completa');
   { const im = doc.querySelector('.musculos img'); assert(im && im.getAttribute('src') === SES[ses].imagen, 'al iniciar se ve la imagen de músculos de la sesión'); }
   click('[data-a="paso"]', '0');
   if (ses === 'pierna'){
@@ -376,10 +379,10 @@ assert(w.resumenPeso([], '2026-11-02') === null, 'sin registros → null');
   const h = est().historial;
   assert(h.length === 2 && h[1].sesion === ses && h[1].fecha === '2026-11-04' && h[1].ejercicios.length === 1, 'entreno guardado con su ejercicio');
   assert(sem('2026-11-02').plan.some(p => p.dia === 2 && p.hecho && p.sesion === ses), 'plan marca el miércoles hecho');
-  assert(/Entreno guardado/.test(doc.body.textContent), 'aviso de guardado');
+  assert(/Entreno guardado/.test(doc.getElementById('app').textContent), 'aviso de guardado');
   // Estadísticas desde inicio
   click('[data-a="vista"]', 'stats');
-  assert(/Estadísticas/.test(doc.body.textContent) && doc.querySelectorAll('.barra').length === 7, 'estadísticas con 7 tipos');
+  assert(/Estadísticas/.test(doc.getElementById('app').textContent) && doc.querySelectorAll('.barra').length === 7, 'estadísticas con 7 tipos');
   click('[data-a="rango"]', '365'); assert(doc.querySelector('.seg .on').dataset.v === '365', 'cambia de rango');
   click('[data-a="volver"]');
   // Peso: registrar varios días y ver evolución
@@ -393,7 +396,7 @@ assert(w.resumenPeso([], '2026-11-02') === null, 'sin registros → null');
   click('[data-a="peso-borrar"]', '2026-11-05');
   assert(est().peso.length === 2 && doc.querySelectorAll('.registro').length === 2, 'borrar un registro');
   click('[data-a="tab"]', 'comidas');
-  assert(/1\.900 kcal/.test(doc.body.textContent) && doc.querySelectorAll('.card').length === 5, 'comidas: día + 4 comidas');
+  assert(/1\.900 kcal/.test(doc.getElementById('app').textContent) && doc.querySelectorAll('.card').length === 5, 'comidas: día + 4 comidas');
   // Cambio de semana: la que era «próxima» pasa a ser la actual con sus 5 días
   W.__ahora = '2026-11-09T09:00:00'; W.render();
   assert(sem('2026-11-09').dias === 5 && sem('2026-11-16'), 'al llegar el lunes, la próxima es la actual y se crea otra');
@@ -416,8 +419,8 @@ assert(w.resumenPeso([], '2026-11-02') === null, 'sin registros → null');
   W.eval("accion('elegir','sentadilla_multipower')");
   assert(doc.querySelector('.card .musculos img').getAttribute('src') === 'sentadilla_multipower.webp', 'al elegir, se ve la imagen del ejercicio');
   assert(doc.querySelector('input[data-in="kg"]').value === '80', 'precarga los kg');
-  assert(/sube un poco el peso/.test(doc.body.textContent), 'aviso de doble progresión');
-  assert(/≈ 40 kg/.test(doc.body.textContent) && /≈ 60 kg/.test(doc.body.textContent), 'aproximación sugerida al 50 % y 75 %');
+  assert(/sube un poco el peso/.test(doc.getElementById('app').textContent), 'aviso de doble progresión');
+  assert(/≈ 40 kg/.test(doc.getElementById('app').textContent) && /≈ 60 kg/.test(doc.getElementById('app').textContent), 'aproximación sugerida al 50 % y 75 %');
   assert(A.errores.length === 0, 'sin excepciones');
 }
 
@@ -433,16 +436,261 @@ assert(w.resumenPeso([], '2026-11-02') === null, 'sin registros → null');
   A = abrir(v02); e = A.w.eval('estado');
   assert(A.errores.length === 0 && e.config.dias === 5 && e.semanas[lunesHoy] && e.perfil.altura === 170 && e.peso.length === 1, 'v0.2: conserva semana, perfil y peso');
   A.w.eval("ui.tab='entrenos'"); A.w.render();
-  assert(A.errores.length === 0 && /Sentadilla hack/.test(A.w.document.body.textContent), 'historial con hack se sigue viendo');
+  assert(A.errores.length === 0 && /Sentadilla hack/.test(A.w.document.getElementById('app').textContent), 'historial con hack se sigue viendo');
   A.w.eval("ui.vista='stats'"); A.w.render();
   assert(A.errores.length === 0, 'estadísticas con datos antiguos sin errores');
   const B = abrir(JSON.stringify({activo: {sesion: 'inexistente', bloques: []}}));
   assert(B.errores.length === 0 && B.w.eval('estado').activo === null, 'entreno activo corrupto se descarta');
 }
 
+/* ---------- 19. Plan fijo: intercambio al entrenar otro día ---------- */
+{
+  const mk = arr => ({plan: arr.map(([dia, sesion, hecho]) => ({dia, sesion, hecho: !!hecho}))});
+  const ver = s => s.plan.map(p => p.dia + ':' + p.sesion + (p.hecho ? '✓' : '')).join(' ');
+  let s = mk([[0,'pierna'],[2,'espalda'],[4,'gluteo']]);
+  w.registrarEnPlanFijo(s, 0, 'pierna'); assert(ver(s) === '0:pierna✓ 2:espalda 4:gluteo', 'mismo día: solo se marca (' + ver(s) + ')');
+  s = mk([[0,'pierna'],[2,'espalda'],[4,'gluteo']]);
+  w.registrarEnPlanFijo(s, 2, 'gluteo'); assert(ver(s) === '0:pierna 2:gluteo✓ 4:espalda', 'otra sesión hoy: se intercambian (' + ver(s) + ')');
+  s = mk([[0,'pierna'],[2,'espalda'],[4,'gluteo']]);
+  w.registrarEnPlanFijo(s, 3, 'gluteo'); assert(ver(s) === '0:pierna 2:espalda 3:gluteo✓', 'día de descanso: se trae la sesión (' + ver(s) + ')');
+  s = mk([[0,'pierna'],[2,'espalda']]);
+  w.registrarEnPlanFijo(s, 3, 'cardio'); assert(ver(s) === '0:pierna 2:espalda 3:cardio✓', 'sesión fuera del plan: se añade (' + ver(s) + ')');
+  s = mk([[0,'pierna'],[2,'espalda'],[5,'pierna']]);
+  w.registrarEnPlanFijo(s, 3, 'pierna'); assert(ver(s) === '0:pierna 2:espalda 3:pierna✓', 'elige la próxima pendiente, no la pasada (' + ver(s) + ')');
+  s = mk([[0,'pierna'],[2,'espalda']]);
+  w.registrarEnPlanFijo(s, 4, 'pierna'); assert(ver(s) === '2:espalda 4:pierna✓', 'si solo queda una pasada sin hacer, se recupera hoy (' + ver(s) + ')');
+}
+
+/* ---------- 20. Confirmar y desbloquear semana ---------- */
+{
+  const e = {config: {disponibles: [0,1,2,3,4,5,6], dias: 4}, semanas: {}, historial: [], clases: []};
+  const lun = D('2026-11-02T10:00:00');
+  w.asegurarSemanas(e, lun);
+  const s1 = e.semanas['2026-11-02'], antes = JSON.stringify(s1.plan);
+  w.confirmarSemana(e, '2026-11-02');
+  w.cambiarSemana(e, '2026-11-09', {dias: 6}, lun);
+  assert(JSON.stringify(s1.plan) === antes && s1.dias === 4, 'semana confirmada: no la cambian otras semanas');
+  w.replanificarSemana(e, '2026-11-02', lun);
+  assert(JSON.stringify(s1.plan) === antes, 'semana confirmada: replanificar no la toca');
+  w.desbloquearSemana(e, '2026-11-02', lun);
+  assert(!s1.confirmada && s1.plan.length === 4, 'desbloquear vuelve al plan automático');
+}
+
+/* ---------- 21. Editor de semana ---------- */
+{
+  const e = {config: {disponibles: [0,1,2,3,4,5,6], dias: 4}, semanas: {}, historial: [], clases: []};
+  const lunes = '2026-11-02';
+  e.semanas[lunes] = {disponibles: [0,1,2,3,4,5,6], dias: 4, plan: [{dia: 0, sesion: 'pierna', hecho: true}, {dia: 1, sesion: 'espalda', hecho: false}, {dia: 3, sesion: 'gluteo', hecho: false}, {dia: 5, sesion: 'empuje', hecho: false}], avisos: [], error: null, personalizada: false, confirmada: false};
+  w.anadirClase(e, '2026-11-08', 'pilates');
+  const mie = D('2026-11-04T10:00:00');
+  const b = w.borradorDeSemana(e, lunes);
+  assert(igual(b.dias, ['pierna','espalda','','gluteo','','empuje','']) && b.hechos[0] && igual(b.pilates, [false,false,false,false,false,false,true]), 'borrador refleja el plan y pilates');
+  assert(w.diaBloqueado(b, 0, mie) && w.diaBloqueado(b, 1, mie) && !w.diaBloqueado(b, 2, mie), 'bloqueados: hecho y días pasados; hoy editable');
+  b.dias[0] = 'cardio'; b.dias[1] = 'torso';           // intentos sobre días bloqueados: se ignoran
+  b.dias[2] = 'gluteo'; b.dias[3] = ''; b.dias[5] = 'espalda'; b.dias[6] = 'cardio';
+  b.pilates[6] = false; b.pilates[4] = true; b.pilates[1] = true;   // martes ya pasó: se ignora
+  w.guardarBorrador(e, b, mie);
+  const pl = e.semanas[lunes].plan.map(p => p.dia + ':' + p.sesion + (p.hecho ? '✓' : '')).join(' ');
+  assert(pl === '0:pierna✓ 1:espalda 2:gluteo 5:espalda 6:cardio', 'plan guardado respetando bloqueos (' + pl + ')');
+  assert(e.semanas[lunes].confirmada && e.semanas[lunes].personalizada && e.semanas[lunes].dias === 5, 'guardar confirma la semana');
+  assert(igual(e.clases.map(c => c.fecha), ['2026-11-06']), 'pilates: quitado el domingo, añadido el viernes, el martes pasado ignorado');
+  // Una semana futura no tiene nada bloqueado
+  const b2 = w.borradorDeSemana(e, '2026-11-09');
+  assert([0,1,2,3,4,5,6].every(k => !w.diaBloqueado(b2, k, mie)), 'semana siguiente: todo editable');
+  // Una clase ya hecha no se quita desde el editor
+  const c = w.anadirClase(e, '2026-11-12', 'pilates'); w.marcarClase(e, c.id);
+  const b3 = w.borradorDeSemana(e, '2026-11-09'); b3.pilates[3] = false; w.guardarBorrador(e, b3, mie);
+  assert(e.clases.some(x => x.id === c.id), 'clase hecha se conserva');
+}
+
+/* ---------- 22. Interfaz: confirmar, editar y entrenar con semana fija ---------- */
+{
+  const A = abrir(undefined, '2026-11-04T09:00:00'); // miércoles
+  const W = A.w, doc = W.document, est = () => W.eval('estado');
+  const click = (sel, v) => { const el = [...doc.querySelectorAll(sel)].find(e => v === undefined || e.dataset.v === v); if (!el) throw new Error('no existe ' + sel + ' ' + v); el.click(); };
+  click('[data-a="tab"]', 'entrenos');
+  assert(doc.querySelector('[data-a="confirmar-semana"]') && doc.querySelector('[data-a="editar"]'), 'botones Confirmar semana y Editar');
+  click('[data-a="confirmar-semana"]');
+  assert(est().semanas['2026-11-02'].confirmada && !doc.querySelector('.chip[data-a="disp"]') && /Semana confirmada/.test(doc.getElementById('app').textContent), 'confirmada: oculta los selectores de días');
+  click('[data-a="editar"]');
+  assert(/Editar semana/.test(doc.getElementById('app').textContent) && !doc.querySelector('nav.tabs') === false, 'abre el editor');
+  const sels = doc.querySelectorAll('select.sel');
+  assert(sels.length === 5, 'miércoles: 5 días editables (X a D), L y M bloqueados');
+  const elegir = (k, v) => { const s = doc.querySelector('select[data-ed="' + k + '"]'); s.value = v; s.dispatchEvent(new W.Event('change', {bubbles: true})); };
+  elegir(2, 'pierna'); elegir(3, 'gluteo');
+  assert(/días seguidos/.test(doc.getElementById('app').textContent), 'aviso de pierna y glúteo en días seguidos');
+  elegir(3, 'espalda'); elegir(4, 'gluteo'); elegir(5, ''); elegir(6, '');
+  assert(!/días seguidos/.test(doc.getElementById('app').textContent), 'aviso desaparece al separarlos');
+  click('[data-a="ed-pilates"]', '5');
+  click('[data-a="ed-guardar"]');
+  const pl = est().semanas['2026-11-02'].plan.filter(p => p.dia >= 2).map(p => p.dia + ':' + p.sesion).join(' ');
+  assert(pl === '2:pierna 3:espalda 4:gluteo', 'guardado desde la interfaz (' + pl + ')');
+  assert(est().clases.some(c => c.fecha === '2026-11-07'), 'pilates del sábado añadido');
+  // Entrena glúteo hoy (miércoles) en vez de pierna → se intercambian
+  click('[data-a="empezar"]', 'gluteo'); click('[data-a="paso"]', '0');
+  click('[data-a="elegir"]', 'hip_thrust_maquina');
+  const esc1 = doc.querySelector('input[data-in="reps"]'); esc1.value = '8'; esc1.dispatchEvent(new W.Event('input', {bubbles: true}));
+  for (let k = 1; k < SES.gluteo.bloques.length; k++) click('[data-a="paso"]', String(k));
+  click('[data-a="terminar"]');
+  const pl2 = est().semanas['2026-11-02'].plan.filter(p => p.dia >= 2).map(p => p.dia + ':' + p.sesion + (p.hecho ? '✓' : '')).join(' ');
+  assert(pl2 === '2:gluteo✓ 3:espalda 4:pierna', 'semana fija: glúteo hecho hoy y pierna pasa al viernes (' + pl2 + ')');
+  // Volver al automático desde el editor
+  click('[data-a="tab"]', 'entrenos'); click('[data-a="editar"]'); click('[data-a="desbloquear"]');
+  assert(!est().semanas['2026-11-02'].confirmada && doc.querySelector('.chip[data-a="disp"]'), 'volver al plan automático');
+  assert(A.errores.length === 0, 'sin excepciones: ' + A.errores.join(' | '));
+}
+
+/* ---------- 23. Volver a elegir ejercicio sin perder lo apuntado ---------- */
+{
+  const A = abrir(undefined, '2026-11-04T09:00:00');
+  const W = A.w, doc = W.document, est = () => W.eval('estado');
+  const click = (sel, v) => { const el = [...doc.querySelectorAll(sel)].find(e => v === undefined || e.dataset.v === v); if (!el) throw new Error('no existe ' + sel + ' ' + v); el.click(); };
+  const escribir = (sel, i, v) => { const el = doc.querySelectorAll(sel)[i]; el.value = v; el.dispatchEvent(new W.Event('input', {bubbles: true})); };
+  W.eval("accion('empezar','pierna')"); click('[data-a="paso"]', '0');
+  click('[data-a="elegir"]', 'prensa');
+  escribir('input[data-in="kg"]', 0, '100'); escribir('input[data-in="reps"]', 0, '9');
+  const btn = doc.querySelector('[data-a="cambiar"]');
+  assert(btn && /Elegir otro ejercicio de cuádriceps/.test(btn.textContent), 'botón visible para volver a elegir');
+  btn.click();
+  assert(doc.querySelectorAll('.opt').length === 5 && /Empezado/.test(doc.querySelector('.opt[data-v="prensa"]').textContent), 'vuelve a la lista del músculo y marca la empezada');
+  click('[data-a="elegir"]', 'goblet');
+  assert(doc.querySelector('input[data-in="reps"]').value === '', 'otro ejercicio empieza vacío');
+  click('[data-a="cambiar"]'); click('[data-a="elegir"]', 'prensa');
+  assert(doc.querySelector('input[data-in="kg"]').value === '100' && doc.querySelector('input[data-in="reps"]').value === '9', 'al volver a prensa recupera lo apuntado');
+  for (let k = 1; k < SES.pierna.bloques.length; k++) click('[data-a="paso"]', String(k));
+  click('[data-a="terminar"]');
+  const h = est().historial[0];
+  assert(h.ejercicios.length === 1 && h.ejercicios[0].id === 'prensa' && h.ejercicios[0].series[0].kg === 100, 'solo se guarda el ejercicio que quedó elegido');
+  assert(A.errores.length === 0, 'sin excepciones: ' + A.errores.join(' | '));
+}
+
+/* ---------- 24. Ventanas de cariño ---------- */
+{
+  const A = abrir(undefined, '2026-11-09T06:30:00');
+  const W = A.w, doc = W.document, est = () => W.eval('estado');
+  const Dw = s => new W.Date(s);
+  assert(W.claveMonitos(Dw('2026-11-09T05:59:00')) === '2026-11-08' && W.claveMonitos(Dw('2026-11-09T06:00:00')) === '2026-11-09', 'Monitos Días cuenta desde las 6:00');
+  assert(W.claveMediaHora(Dw('2026-11-09T17:42:00')) === '2026-11-09T17:30' && W.claveMediaHora(Dw('2026-11-09T18:00:00')) === '2026-11-09T18:00', 'clave de media hora');
+  W.eval('FOTOS_CARINO.length = 0'); // el test controla qué fotos hay
+  // Al abrir por primera vez sale Monitos Días y no se quita sin el botón
+  assert(doc.querySelector('.velo') && /Monitos Días/.test(doc.querySelector('.velo').textContent) && doc.querySelector('.velo img').getAttribute('src') === 'carino-23.webp', 'sale Monitos Días con «Te quiero así de grande»');
+  assert(!doc.querySelector('.velo').hasAttribute('data-a') && doc.querySelectorAll('.velo [data-a]').length === 1, 'la ventana solo se cierra con su botón');
+  W.eval("accion('tab','entrenos')");
+  assert(doc.querySelector('.velo'), 'sigue ahí aunque cambie de pestaña');
+  doc.querySelector('[data-a="monitos-ok"]').click();
+  assert(!doc.querySelector('.velo'), 'el botón «Monitos días» la quita');
+  // Sin fotos de media hora todavía: no sale nada más
+  W.__ahora = '2026-11-09T18:05:00'; W.render();
+  assert(!doc.querySelector('.velo'), 'sin fotos cargadas no hay ventana de media hora');
+  // Con fotos
+  W.eval("FOTOS_CARINO.push('carino-01.webp', 'pierna.webp')");
+  const v = () => W.ventanaPendiente(est(), new W.Date(W.__ahora));
+  W.__ahora = '2026-11-09T18:05:00'; W.render();
+  const f1 = doc.querySelector('.velo img').getAttribute('src');
+  assert(/Te quiero Manu/.test(doc.querySelector('.velo').textContent) && ['carino-01.webp','pierna.webp'].includes(f1), 'foto de media hora con «Te quiero Manu»');
+  W.render(); assert(doc.querySelector('.velo img').getAttribute('src') === f1, 'la foto no cambia al repintar');
+  doc.querySelector('[data-a="carino-ok"]').click();
+  assert(!doc.querySelector('.velo'), '«Te quiero Manu» la quita');
+  W.__ahora = '2026-11-09T18:29:00'; W.render(); assert(!doc.querySelector('.velo'), 'no vuelve hasta la siguiente media hora');
+  W.__ahora = '2026-11-09T18:30:00'; W.render();
+  const f2 = doc.querySelector('.velo img').getAttribute('src');
+  assert(f2 !== f1, 'a las 18:30 sale otra foto distinta de la anterior');
+  doc.querySelector('[data-a="carino-ok"]').click();
+  // App cerrada varias horas: al abrir sale una sola
+  W.__ahora = '2026-11-09T21:47:00'; W.render();
+  assert(doc.querySelectorAll('.velo').length === 1 && v().clave === '2026-11-09T21:30', 'tras horas cerrada sale solo la última');
+  doc.querySelector('[data-a="carino-ok"]').click();
+  assert(v() === null, 'y no quedan más pendientes');
+  // Al día siguiente: hasta quitar Monitos Días no sale la foto
+  W.__ahora = '2026-11-10T07:15:00'; W.render();
+  assert(v().tipo === 'monitos' && /Monitos Días/.test(doc.querySelector('.velo').textContent), 'a las 7:15 primero Monitos Días');
+  doc.querySelector('[data-a="monitos-ok"]').click();
+  assert(!doc.querySelector('.velo'), 'quitar Monitos Días no lanza enseguida la foto de esa media hora');
+  W.__ahora = '2026-11-10T07:30:00'; W.render(); assert(v().tipo === 'foto', 'a las 7:30 la foto');
+  doc.querySelector('[data-a="carino-ok"]').click();
+  // Madrugada: Monitos Días del día anterior ya quitado → solo fotos
+  W.__ahora = '2026-11-11T02:10:00'; W.render(); assert(v().tipo === 'foto', 'de madrugada no vuelve Monitos Días');
+  doc.querySelector('[data-a="carino-ok"]').click();
+  W.__ahora = '2026-11-11T06:00:00'; W.render(); assert(v().tipo === 'monitos', 'a las 6:00 vuelve Monitos Días');
+  assert(JSON.parse(A.store['entreno.estado']).carino.monitosVisto === '2026-11-10', 'lo visto se guarda en el móvil');
+  assert(A.errores.length === 0, 'sin excepciones: ' + A.errores.join(' | '));
+}
+
+/* ---------- 25. Mis pesos y pesos anteriores ---------- */
+{
+  const H = [
+    {id: 1, fecha: '2026-10-20', sesion: 'pierna', inicio: null, fin: null, ejercicios: [{id: 'prensa', series: [{kg: 90, reps: 10}, {kg: 90, reps: 9}]}, {id: 'plancha', series: [{kg: null, reps: 40}]}]},
+    {id: 2, fecha: '2026-10-27', sesion: 'espalda', inicio: null, fin: null, ejercicios: [{id: 'dominada_asistida', series: [{kg: 30, reps: 8}]}]},
+    {id: 3, fecha: '2026-11-03', sesion: 'pierna', inicio: null, fin: null, ejercicios: [{id: 'prensa', series: [{kg: 100, reps: 8}, {kg: 95, reps: 10}]}]},
+  ];
+  const r = w.resumenPesos(H);
+  assert(igual(r.map(x => x.id), ['prensa', 'dominada_asistida']), 'resumen: solo ejercicios con kilos, el más reciente primero');
+  assert(r[0].veces === 2 && r[0].mejor.kg === 100 && r[0].ultimaFecha === '2026-11-03', 'prensa: 2 sesiones, mejor 100 kg');
+  assert(r[1].mejor === null, 'la asistencia no cuenta como marca');
+  assert(igual(w.historialEjercicio(H, 'prensa').map(x => x.fecha), ['2026-11-03', '2026-10-20']), 'historial del ejercicio, reciente primero');
+  assert(w.textoSeries(H[2].ejercicios[0].series, 'prensa') === '100 × 8 · 95 × 10' && w.textoSeries(H[1].ejercicios[0].series, 'dominada_asistida') === '30 kg ayuda × 8', 'texto de series');
+  const A = abrir(JSON.stringify({historial: H, carino: {monitosVisto: '2026-11-09'}}), '2026-11-09T10:00:00');
+  const W = A.w, doc = W.document, app = () => doc.getElementById('app').textContent;
+  assert(/Mis pesos/.test(app()) && doc.querySelectorAll('.marca[data-a="peso-ej"]').length === 2, 'Inicio: apartado Mis pesos');
+  doc.querySelector('[data-a="vista"][data-v="pesos"]').click();
+  assert(/Mejor: 100 kg × 8/.test(app()), 'lista de pesos con mejor marca');
+  doc.querySelector('[data-a="peso-ej"][data-v="prensa"]').click();
+  assert(/90 → 100 kg/.test(app()) && doc.querySelectorAll('.registro').length === 2, 'detalle: progreso y sesiones');
+  doc.querySelector('[data-a="volver-pesos"]').click(); assert(/Mis pesos/.test(app()) && doc.querySelector('[data-a="volver"]'), 'volver a la lista');
+  // En el entreno: botón para ver pesos anteriores
+  W.eval("accion('empezar','pierna');accion('paso','0');accion('elegir','prensa')");
+  const b = doc.querySelector('[data-a="ver-anteriores"]');
+  assert(b && /Ver pesos anteriores/.test(b.textContent) && !doc.querySelector('.anteriores'), 'botón Ver pesos anteriores');
+  b.click();
+  assert(doc.querySelectorAll('.anteriores div').length === 2 && /100 × 8 · 95 × 10/.test(doc.querySelector('.anteriores').textContent), 'despliega las sesiones anteriores');
+  W.eval("accion('paso','1')"); W.eval("accion('paso','0')");
+  assert(!doc.querySelector('.anteriores'), 'se pliega al cambiar de ejercicio');
+  W.eval("accion('cambiar');accion('elegir','pendulo')");
+  assert(!doc.querySelector('[data-a="ver-anteriores"]'), 'sin historial no sale el botón');
+  assert(A.errores.length === 0, 'sin excepciones: ' + A.errores.join(' | '));
+}
+
+/* ---------- 26. Fotos personales guardadas en el móvil ---------- */
+async function testFotos(){
+  assert(igual(w.tamanoReducido(4032, 3024, 1280), [1280, 960]) && igual(w.tamanoReducido(3024, 4032, 1280), [960, 1280]) && igual(w.tamanoReducido(800, 600, 1280), [800, 600]), 'reducción a 1280 px manteniendo proporción');
+  const { indexedDB: fakeIDB } = require('fake-indexeddb');
+  const A = abrir(JSON.stringify({carino: {monitosVisto: '2026-11-09'}}), '2026-11-09T18:05:00');
+  const W = A.w, doc = W.document;
+  W.indexedDB = fakeIDB;
+  W.eval('FOTOS_CARINO.length = 0');
+  let n = 0; W.URL.createObjectURL = () => 'blob:prueba-' + (++n); W.URL.revokeObjectURL = () => {};
+  const buf = new Uint8Array([1, 2, 3]).buffer;
+  await W.guardarFotoDB({id: 'local:a', buf, type: 'image/jpeg', w: 960, h: 1280, fecha: 1});
+  await W.guardarFotoDB({id: 'local:b', buf, type: 'image/jpeg', w: 1280, h: 960, fecha: 2});
+  assert(igual((await W.leerFotosDB()).map(r => r.id), ['local:a', 'local:b']), 'fotos guardadas y leídas en orden');
+  await W.cargarFotosLocales(); W.render();
+  assert(igual(W.fotosCarino(), ['local:a', 'local:b']), 'las fotos del móvil entran en la rotación');
+  const img = doc.querySelector('.velo img');
+  assert(img && /^blob:prueba-/.test(img.getAttribute('src')) && /Te quiero Manu/.test(doc.querySelector('.velo').textContent), 'la ventana de media hora muestra una foto del móvil');
+  assert(['960', '1280'].includes(img.getAttribute('width')), 'con su tamaño real');
+  doc.querySelector('[data-a="carino-ok"]').click();
+  // Gestor oculto: 5 toques en la versión
+  for (let k = 0; k < 4; k++) doc.getElementById('version').click();
+  assert(!/Añadir fotos/.test(doc.getElementById('app').textContent), 'con 4 toques no se abre');
+  doc.getElementById('version').click();
+  assert(/Añadir fotos de la galería/.test(doc.getElementById('app').textContent) && doc.querySelectorAll('.fotos-grid img').length === 2, 'con 5 toques se abre el gestor con las 2 fotos');
+  assert(doc.querySelector('input[type="file"][accept="image/*"][multiple]'), 'botón para elegir varias fotos de la galería');
+  doc.querySelector('[data-a="foto-borrar"][data-v="local:a"]').click();
+  await new Promise(r => setTimeout(r, 50));
+  assert(igual((await W.leerFotosDB()).map(r => r.id), ['local:b']) && doc.querySelectorAll('.fotos-grid img').length === 1, 'quitar una foto la borra del móvil');
+  assert(JSON.parse(A.store['entreno.estado']).carino && !A.store['entreno.estado'].includes('blob:'), 'las fotos no van en los datos normales');
+  // Sin IndexedDB (navegador sin soporte): no rompe
+  const B = abrir(undefined, '2026-11-09T18:05:00');
+  await B.w.cargarFotosLocales();
+  assert(B.errores.length === 0 && B.w.fotosCarino().length === B.w.eval('FOTOS_CARINO.length'), 'sin almacén de fotos la app sigue funcionando');
+  assert(A.errores.length === 0, 'sin excepciones: ' + A.errores.join(' | '));
+}
+
 /* ---------- Resumen ---------- */
 console.log('\nPlanes por defecto (todos los días disponibles):');
 const DN = ev('DIAS_CORTO');
 for (let n = 1; n <= 6; n++) console.log(' ', n, '→', w.planificarSemana({dias: n, disponibles: TODOS}).plan.map(p => DN[p.dia] + ' ' + SES[p.sesion].nombre).join(' · '));
-console.log(`\n${ok} comprobaciones correctas, ${fallos} fallos`);
-process.exit(fallos ? 1 : 0);
+testFotos().catch(e => { fallos++; console.error('✗ testFotos: ' + e.stack); }).then(() => {
+  console.log(`\n${ok} comprobaciones correctas, ${fallos} fallos`);
+  process.exit(fallos ? 1 : 0);
+});
