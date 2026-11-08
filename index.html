@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Entreno">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>Entreno</title>
 <style>
 :root{
@@ -185,7 +185,7 @@ nav.tabs svg{width:23px;height:23px}
    VERSIÓN — en cada publicación cambiar APP_VERSION aquí Y VERSION en sw.js
    (el test comprueba que coinciden)
    ===================================================================== */
-const APP_VERSION = '0.3.6';
+const APP_VERSION = '0.3.7';
 const STORAGE_KEY = 'entreno.estado';
 
 const DIAS_SEMANA = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
@@ -296,7 +296,7 @@ const CORE = ['crunch_polea','plancha','plancha_lateral','dead_bug','pallof','el
 
 const SESIONES = {
   pierna: {
-    nombre:'Pierna', subtitulo:'Cuádriceps, glúteo y femoral', tipo:'inferior', imagen:'images/pierna.webp',
+    nombre:'Pierna', subtitulo:'Cuádriceps, glúteo y femoral', tipo:'inferior', imagen:'pierna.webp',
     calentamiento:['5–8 min de bici o elíptica suave',
                    'Movilidad: 10 balanceos de pierna por lado y 10 sentadillas sin peso',
                    'Activación: 15 puentes de glúteo'],
@@ -313,7 +313,7 @@ const SESIONES = {
        opciones:['abduccion_maquina','gemelo_maquina','gemelo_prensa']},
     ]},
   gluteo: {
-    nombre:'Glúteo', subtitulo:'Glúteo y cadena posterior', tipo:'inferior', imagen:'images/gluteo.webp',
+    nombre:'Glúteo', subtitulo:'Glúteo y cadena posterior', tipo:'inferior', imagen:'gluteo.webp',
     calentamiento:['5–8 min de bici o escaladora suave',
                    'Movilidad de cadera: 10 balanceos por lado',
                    'Activación: 15 puentes de glúteo y 15 pasos laterales con banda por lado'],
@@ -329,7 +329,7 @@ const SESIONES = {
       {zona:'Core', esquema:E_CORE, opciones:CORE},
     ]},
   espalda: {
-    nombre:'Espalda', subtitulo:'Espalda y bíceps', tipo:'superior', imagen:'images/espalda.webp',
+    nombre:'Espalda', subtitulo:'Espalda y bíceps', tipo:'superior', imagen:'espalda.webp',
     calentamiento:['5 min de remo o elíptica suave',
                    'Movilidad de hombro: 10 círculos de brazos y 10 rotaciones con banda',
                    'Activación: 15 aperturas con banda'],
@@ -346,7 +346,7 @@ const SESIONES = {
        opciones:['curl_maquina','curl_polea','curl_mancuernas','curl_martillo']},
     ]},
   empuje: {
-    nombre:'Empuje', subtitulo:'Pecho, hombro y tríceps', tipo:'superior', imagen:'images/empuje.webp',
+    nombre:'Empuje', subtitulo:'Pecho, hombro y tríceps', tipo:'superior', imagen:'empuje.webp',
     calentamiento:['5 min de elíptica suave',
                    'Movilidad de hombro: 10 círculos de brazos y 10 rotaciones con banda',
                    'Activación: 10 flexiones apoyando rodillas'],
@@ -363,7 +363,7 @@ const SESIONES = {
        opciones:['triceps_cuerda','triceps_barra_polea','triceps_mancuerna','fondos_asistidos']},
     ]},
   torso: {
-    nombre:'Torso completo', subtitulo:'Espalda, pecho, hombro y brazo', tipo:'superior', imagen:'images/torso.webp',
+    nombre:'Torso completo', subtitulo:'Espalda, pecho, hombro y brazo', tipo:'superior', imagen:'torso.webp',
     calentamiento:['5 min de remo o elíptica suave',
                    'Movilidad de hombro: 10 círculos de brazos y 10 rotaciones con banda'],
     bloques:[
@@ -379,7 +379,7 @@ const SESIONES = {
        opciones:['curl_maquina','curl_polea','curl_mancuernas','triceps_cuerda','triceps_barra_polea']},
     ]},
   cardio: {
-    nombre:'Cardio y core', subtitulo:'Resistencia y zona media', tipo:'cardio', imagen:'images/cardio.webp',
+    nombre:'Cardio y core', subtitulo:'Resistencia y zona media', tipo:'cardio', imagen:'cardio.webp',
     calentamiento:['3–5 min a ritmo muy suave en la máquina que elijas'],
     bloques:[
       {zona:'Cardio', esquema:E_CARDIO,
@@ -406,77 +406,78 @@ const CLASES = {
 };
 
 /* Imágenes incluidas en la app con su tamaño (ancho, alto).
-   Para añadir una: guardarla en images/ (ejercicios en images/ej/<id>.webp), añadirla aquí y en la lista de sw.js. */
+   Todas van sueltas en la raíz del repositorio. Las de ejercicio se llaman <id del ejercicio>.webp.
+   Para añadir una: subirla junto a index.html, añadirla aquí y en la lista de sw.js. */
 const TAM_IMG = {
-  'images/cardio.webp':[800,400],
-  'images/ej/abduccion_maquina.webp':[800,400],
-  'images/ej/abduccion_polea.webp':[800,400],
-  'images/ej/bulgara_mancuernas.webp':[800,400],
-  'images/ej/caminata_banda.webp':[800,400],
-  'images/ej/contractor.webp':[800,400],
-  'images/ej/contractor_inverso.webp':[800,400],
-  'images/ej/crunch_polea.webp':[800,400],
-  'images/ej/curl_mancuernas.webp':[800,400],
-  'images/ej/curl_maquina.webp':[800,400],
-  'images/ej/curl_martillo.webp':[800,400],
-  'images/ej/curl_pie.webp':[800,400],
-  'images/ej/curl_polea.webp':[800,400],
-  'images/ej/curl_sentado.webp':[800,400],
-  'images/ej/curl_tumbado.webp':[800,400],
-  'images/ej/dead_bug.webp':[800,400],
-  'images/ej/dominada_asistida.webp':[800,400],
-  'images/ej/elevacion_piernas.webp':[800,400],
-  'images/ej/extension.webp':[800,400],
-  'images/ej/face_pull.webp':[800,400],
-  'images/ej/fondos_asistidos.webp':[800,400],
-  'images/ej/gemelo_maquina.webp':[800,400],
-  'images/ej/gemelo_prensa.webp':[800,533],
-  'images/ej/goblet.webp':[800,400],
-  'images/ej/hip_thrust_mancuerna.webp':[800,400],
-  'images/ej/hip_thrust_maquina.webp':[800,400],
-  'images/ej/hip_thrust_multipower.webp':[800,400],
-  'images/ej/hiperextension.webp':[800,400],
-  'images/ej/jalon.webp':[800,400],
-  'images/ej/jalon_estrecho.webp':[800,400],
-  'images/ej/jalon_unilateral.webp':[800,400],
-  'images/ej/laterales_mancuernas.webp':[800,400],
-  'images/ej/laterales_maquina.webp':[800,400],
-  'images/ej/laterales_polea.webp':[800,400],
-  'images/ej/pajaros.webp':[800,400],
-  'images/ej/pallof.webp':[800,400],
-  'images/ej/patada_maquina.webp':[800,400],
-  'images/ej/patada_polea.webp':[800,400],
-  'images/ej/plancha.webp':[800,400],
-  'images/ej/plancha_lateral.webp':[800,400],
-  'images/ej/prensa.webp':[800,400],
-  'images/ej/prensa_unilateral.webp':[800,400],
-  'images/ej/press_hombro_mancuernas.webp':[800,400],
-  'images/ej/press_hombro_maquina.webp':[800,400],
-  'images/ej/press_inclinado_mancuernas.webp':[800,400],
-  'images/ej/press_inclinado_maquina.webp':[800,400],
-  'images/ej/press_mancuernas.webp':[800,400],
-  'images/ej/press_pecho_maquina.webp':[800,400],
-  'images/ej/pull_through.webp':[800,533],
-  'images/ej/pullover_polea.webp':[800,400],
-  'images/ej/remo_mancuerna.webp':[800,400],
-  'images/ej/remo_maquina.webp':[800,400],
-  'images/ej/remo_pecho_apoyado.webp':[800,400],
-  'images/ej/remo_polea.webp':[800,400],
-  'images/ej/rumano_mancuernas.webp':[800,533],
-  'images/ej/sentadilla_multipower.webp':[800,400],
-  'images/ej/stepup_mancuernas.webp':[800,533],
-  'images/ej/triceps_barra_polea.webp':[800,400],
-  'images/ej/triceps_cuerda.webp':[800,400],
-  'images/ej/triceps_mancuerna.webp':[800,400],
-  'images/ej/zancada_inversa.webp':[800,533],
-  'images/ej/zancada_mancuernas.webp':[800,400],
-  'images/empuje.webp':[800,648],
-  'images/espalda.webp':[800,648],
-  'images/gluteo.webp':[800,648],
-  'images/pierna.webp':[800,648],
-  'images/torso.webp':[800,648],
+  'abduccion_maquina.webp':[800,400],
+  'abduccion_polea.webp':[800,400],
+  'bulgara_mancuernas.webp':[800,400],
+  'caminata_banda.webp':[800,400],
+  'cardio.webp':[800,400],
+  'contractor.webp':[800,400],
+  'contractor_inverso.webp':[800,400],
+  'crunch_polea.webp':[800,400],
+  'curl_mancuernas.webp':[800,400],
+  'curl_maquina.webp':[800,400],
+  'curl_martillo.webp':[800,400],
+  'curl_pie.webp':[800,400],
+  'curl_polea.webp':[800,400],
+  'curl_sentado.webp':[800,400],
+  'curl_tumbado.webp':[800,400],
+  'dead_bug.webp':[800,400],
+  'dominada_asistida.webp':[800,400],
+  'elevacion_piernas.webp':[800,400],
+  'empuje.webp':[800,648],
+  'espalda.webp':[800,648],
+  'extension.webp':[800,400],
+  'face_pull.webp':[800,400],
+  'fondos_asistidos.webp':[800,400],
+  'gemelo_maquina.webp':[800,400],
+  'gemelo_prensa.webp':[800,533],
+  'gluteo.webp':[800,648],
+  'goblet.webp':[800,400],
+  'hip_thrust_mancuerna.webp':[800,400],
+  'hip_thrust_maquina.webp':[800,400],
+  'hip_thrust_multipower.webp':[800,400],
+  'hiperextension.webp':[800,400],
+  'jalon.webp':[800,400],
+  'jalon_estrecho.webp':[800,400],
+  'jalon_unilateral.webp':[800,400],
+  'laterales_mancuernas.webp':[800,400],
+  'laterales_maquina.webp':[800,400],
+  'laterales_polea.webp':[800,400],
+  'pajaros.webp':[800,400],
+  'pallof.webp':[800,400],
+  'patada_maquina.webp':[800,400],
+  'patada_polea.webp':[800,400],
+  'pierna.webp':[800,648],
+  'plancha.webp':[800,400],
+  'plancha_lateral.webp':[800,400],
+  'prensa.webp':[800,400],
+  'prensa_unilateral.webp':[800,400],
+  'press_hombro_mancuernas.webp':[800,400],
+  'press_hombro_maquina.webp':[800,400],
+  'press_inclinado_mancuernas.webp':[800,400],
+  'press_inclinado_maquina.webp':[800,400],
+  'press_mancuernas.webp':[800,400],
+  'press_pecho_maquina.webp':[800,400],
+  'pull_through.webp':[800,533],
+  'pullover_polea.webp':[800,400],
+  'remo_mancuerna.webp':[800,400],
+  'remo_maquina.webp':[800,400],
+  'remo_pecho_apoyado.webp':[800,400],
+  'remo_polea.webp':[800,400],
+  'rumano_mancuernas.webp':[800,533],
+  'sentadilla_multipower.webp':[800,400],
+  'stepup_mancuernas.webp':[800,533],
+  'torso.webp':[800,648],
+  'triceps_barra_polea.webp':[800,400],
+  'triceps_cuerda.webp':[800,400],
+  'triceps_mancuerna.webp':[800,400],
+  'zancada_inversa.webp':[800,533],
+  'zancada_mancuernas.webp':[800,400],
 };
-function imagenEjercicio(id){ const p = 'images/ej/' + id + '.webp'; return TAM_IMG[p] ? p : null; }
+function imagenEjercicio(id){ const p = id + '.webp'; return EJERCICIOS[id] && TAM_IMG[p] ? p : null; }
 
 /* Macros orientativas (estimación: Mifflin-St Jeor × 1,55 ≈ 2.190 kcal; objetivo 1.900) */
 const MACROS = {
