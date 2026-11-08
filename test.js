@@ -81,12 +81,14 @@ for (const [src, t] of Object.entries(TAM)){
   assert(fs.existsSync(path.join(RAIZ, src)), src + ': existe');
   assert(igual(tamWebp(path.join(RAIZ, src)), t), src + `: tamaño declarado ${t} = real ${tamWebp(path.join(RAIZ, src))}`);
   assert(archivosSw.includes(src), src + ': sw.js la guarda para usarla sin conexión');
-  if (src.startsWith('images/ej/')) assert(EJ[src.slice(10, -5)], src + ': corresponde a un ejercicio que existe');
+  const esSesion = Object.values(SES).some(s => s.imagen === src);
+  if (!esSesion) assert(EJ[src.slice(0, -5)], src + ': corresponde a un ejercicio que existe');
 }
 for (const [sid, s] of Object.entries(SES)) assert(TAM[s.imagen], sid + ': su imagen está registrada');
-assert(w.imagenEjercicio('prensa') === 'images/ej/prensa.webp' && w.imagenEjercicio('laterales_maquina') === null, 'imagen de ejercicio solo si existe');
-const enDisco = fs.readdirSync(path.join(RAIZ, 'images/ej')).map(f => 'images/ej/' + f);
+assert(w.htmlImg && w.imagenEjercicio('prensa') === 'prensa.webp' && w.imagenEjercicio('eliptica') === null && w.imagenEjercicio('pierna') === null, 'imagen de ejercicio solo si existe (y nunca la de una sesión)');
+const enDisco = fs.readdirSync(RAIZ).filter(f => f.endsWith('.webp'));
 for (const f of enDisco) assert(TAM[f], f + ': imagen en la carpeta pero sin registrar en TAM_IMG');
+assert(fs.readdirSync(RAIZ).filter(f => fs.statSync(path.join(RAIZ, f)).isDirectory() && f !== 'tests').length === 0, 'estructura plana: sin subcarpetas (salvo tests)');
 for (const id of Object.keys(EJ)) assert(usados.has(id), 'ejercicio definido y usado en alguna sesión: ' + id);
 assert(igual(Object.keys(PL), ['1','2','3','4','5','6']), 'plantillas de 1 a 6 días');
 for (const [n, pl] of Object.entries(PL)){
@@ -355,10 +357,10 @@ assert(w.resumenPeso([], '2026-11-02') === null, 'sin registros → null');
   { const im = doc.querySelector('.musculos img'); assert(im && im.getAttribute('src') === SES[ses].imagen, 'al iniciar se ve la imagen de músculos de la sesión'); }
   click('[data-a="paso"]', '0');
   if (ses === 'pierna'){
-    assert(doc.querySelector('.opt[data-v="prensa"] img') && !doc.querySelector('.opt[data-v="pendulo"] img'), 'miniaturas solo en ejercicios con imagen');
+    assert(doc.querySelector('.opt[data-v="prensa"] img') && doc.querySelector('.opt[data-v="pendulo"] img'), 'miniaturas en los ejercicios con imagen');
     click('[data-a="elegir"]', 'sentadilla_multipower');
     assert(doc.querySelectorAll('.serie.aprox').length === 2, 'multipower: 2 aproximaciones');
-    assert(doc.querySelector('.card .musculos img').getAttribute('src') === 'images/ej/sentadilla_multipower.webp', 'al elegir, se ve la imagen del ejercicio');
+    assert(doc.querySelector('.card .musculos img').getAttribute('src') === 'sentadilla_multipower.webp', 'al elegir, se ve la imagen del ejercicio');
   } else click('[data-a="elegir"]', doc.querySelector('.opt').dataset.v);
   const nInputs = doc.querySelectorAll('input[data-in="reps"]').length;
   for (let k = 0; k < nInputs; k++){ if (doc.querySelectorAll('input[data-in="kg"]')[k]) escribir('input[data-in="kg"]', k, '40,5'); escribir('input[data-in="reps"]', k, '12'); }
@@ -410,9 +412,9 @@ assert(w.resumenPeso([], '2026-11-02') === null, 'sin registros → null');
   W.__ahora = '2026-11-09T09:00:00'; W.render();
   W.eval("accion('empezar','pierna')"); W.eval("accion('paso','0')");
   assert(/Última vez: 80 kg × 10/.test(doc.querySelector('.opt[data-v="sentadilla_multipower"]').textContent), 'opción muestra la última vez');
-  assert(doc.querySelector('.opt[data-v="prensa"] img') && !doc.querySelector('.opt[data-v="pendulo"] img'), 'miniaturas solo en ejercicios con imagen');
+  assert(doc.querySelector('.opt[data-v="prensa"] img') && doc.querySelector('.opt[data-v="pendulo"] img'), 'miniaturas en los ejercicios con imagen');
   W.eval("accion('elegir','sentadilla_multipower')");
-  assert(doc.querySelector('.card .musculos img').getAttribute('src') === 'images/ej/sentadilla_multipower.webp', 'al elegir, se ve la imagen del ejercicio');
+  assert(doc.querySelector('.card .musculos img').getAttribute('src') === 'sentadilla_multipower.webp', 'al elegir, se ve la imagen del ejercicio');
   assert(doc.querySelector('input[data-in="kg"]').value === '80', 'precarga los kg');
   assert(/sube un poco el peso/.test(doc.body.textContent), 'aviso de doble progresión');
   assert(/≈ 40 kg/.test(doc.body.textContent) && /≈ 60 kg/.test(doc.body.textContent), 'aproximación sugerida al 50 % y 75 %');

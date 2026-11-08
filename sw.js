@@ -1,5 +1,5 @@
 // En cada publicación: cambiar VERSION aquí Y APP_VERSION en index.html (deben coincidir)
-const VERSION = '0.3.7';
+const VERSION = '0.3.8';
 const CACHE = 'entreno-v' + VERSION;
 const ARCHIVOS = [
   './',
@@ -49,6 +49,7 @@ const ARCHIVOS = [
   './pallof.webp',
   './patada_maquina.webp',
   './patada_polea.webp',
+  './pendulo.webp',
   './pierna.webp',
   './plancha.webp',
   './plancha_lateral.webp',
